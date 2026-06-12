@@ -33,6 +33,11 @@ export async function POST(req: Request) {
 
     const decisions = JSON.parse(String(form.get('decisions') || '{"ambiguous":{},"companyCorrections":{}}')) as SessionDecisions;
     const session = runAnalysis(rawFiles, goText, goInfo, decisions);
+    if (session.classified.length === 0) {
+      return NextResponse.json({
+        error: `No learners with Status "Completed" found in the uploaded file(s) (${session.summary.totalFiltered} other row(s) filtered out). Check that these are the standard TalentLMS per-course exports.`,
+      }, { status: 400 });
+    }
     const verify = buildCompanyVerify(session.classified.filter(c => !c.ambiguousCandidates));
 
     // AI assist (optional): flag suspicious companies

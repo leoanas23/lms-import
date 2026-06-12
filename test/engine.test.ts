@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { parseRawFile } from '../lib/engine/parse';
+import { parseRawFile, parseRawWorkbook } from '../lib/engine/parse';
 import { parseGoExport, classifyLearners } from '../lib/engine/match';
 import { buildTitle } from '../lib/engine/trainings';
 import { normalizeDate, normalizeZip, normalizeCounty, normalizeState } from '../lib/engine/normalize';
@@ -54,6 +54,33 @@ const raw2 = makeRaw('Funding Foundations', 'BSU', '2026-05-06', [
   ['Monica','Drew','monica@x.com','Completed','','Services','Rockville','Maryland','20850','Montgomery County','','','','','Female','','',''],
   ['New','Person','new@x.com','Completed','-','','Frederick','Maryland','21701','Frederick','','','','','','','',''],
 ]);
+
+// Real exports can have a clipped sheet range (!ref starting below the header
+// row) or preamble rows above the header — both must still parse.
+const wbClipped = XLSX.read(makeRaw('Clipped Course', 'MWBC', '2026-05-05', [
+  ['Joy','Martin','joy@x.com','Completed','','','Bowie','MD','20772','PG','','','','','Female','','',''],
+]), { type: 'buffer', cellDates: true });
+// clip the header row out of the declared range (cells still exist above it)
+wbClipped.Sheets['Users']['!ref'] = 'A2:' + wbClipped.Sheets['Users']['!ref']!.split(':')[1];
+const evClipped = parseRawWorkbook(wbClipped, 'clipped.xlsx');
+eq('clipped !ref still finds header', evClipped.learners.length, 1);
+eq('clipped !ref learner email', evClipped.learners[0].email, 'joy@x.com');
+
+function makeRawPreamble(): Buffer {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Course name', 'Preamble Course'], ['Category', 'MWBC'], ['Start date', '2026-05-05'],
+  ]), 'Overview');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Course progress report', ''],            // preamble row above the real header
+    ['First name','Last name','Email','Status'],
+    ['Joy','Martin','joy@x.com','Completed'],
+  ]), 'Users');
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+}
+const evPre = parseRawFile(makeRawPreamble(), 'preamble.xlsx');
+eq('preamble row skipped, header found', evPre.learners.length, 1);
+eq('preamble learner name', evPre.learners[0].firstName, 'Joy');
 
 const ev1 = parseRawFile(raw1, 'Course_May5_report.xlsx');
 eq('parse course', ev1.courseName, 'MAY 5 | Customer Journey Audit');

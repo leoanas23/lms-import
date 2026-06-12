@@ -13,14 +13,26 @@ const KNOWN_USERS_COLUMNS = new Set([
   'completion date','progress','score','points','registration date','last login','user id','username','branch',
 ]);
 
+/** All cell rows of a sheet, with the range expanded back to A1 — some LMS
+ * exports declare a !ref that starts BELOW the real header row, which made
+ * the first data row look like headers. */
+function gridRows(ws: XLSX.WorkSheet): unknown[][] {
+  const ref = ws['!ref'] || 'A1';
+  const end = ref.includes(':') ? ref.split(':')[1] : ref;
+  return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', range: `A1:${end}` });
+}
+
 /** Parse one raw TalentLMS per-course xlsx. */
 export function parseRawFile(buf: Buffer | Uint8Array, filename: string): TrainingEvent {
-  const wb = XLSX.read(buf, { type: 'buffer', cellDates: true });
+  return parseRawWorkbook(XLSX.read(buf, { type: 'buffer', cellDates: true }), filename);
+}
+
+export function parseRawWorkbook(wb: XLSX.WorkBook, filename: string): TrainingEvent {
 
   // --- Overview sheet: course name, center (Category), session date ---
   const ovName = wb.SheetNames.find(n => n.toLowerCase() === 'overview');
   if (!ovName) throw new Error(`${filename}: no Overview sheet found`);
-  const ov: (string | number | Date)[][] = XLSX.utils.sheet_to_json(wb.Sheets[ovName], { header: 1, defval: '' });
+  const ov = gridRows(wb.Sheets[ovName]);
   let courseName = '', category = '', sessionDateRaw: unknown = '';
   for (const row of ov) {
     const key = String(row[0] ?? '').trim().toLowerCase();
@@ -40,26 +52,34 @@ export function parseRawFile(buf: Buffer | Uint8Array, filename: string): Traini
   // --- Users sheet: Completed learners only ---
   const usName = wb.SheetNames.find(n => n.toLowerCase() === 'users');
   if (!usName) throw new Error(`${filename}: no Users sheet found`);
-  const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(wb.Sheets[usName], { defval: '' });
+  const grid = gridRows(wb.Sheets[usName]);
 
-  const headers = rows.length ? Object.keys(rows[0]) : [];
-  const unmappedColumns = headers.filter(h => !KNOWN_USERS_COLUMNS.has(h.trim().toLowerCase()));
+  // The header row is wherever "First name" + "Email" appear, not necessarily row 1
+  // (real exports can have preamble rows or a clipped sheet range above it).
+  const cellStr = (c: unknown) => (c instanceof Date ? normalizeDate(c) : String(c ?? '').trim());
+  const headerIdx = grid.findIndex(r => {
+    const cells = r.map(c => cellStr(c).toLowerCase());
+    return cells.includes('first name') && cells.includes('email');
+  });
+  if (headerIdx === -1) throw new Error(
+    `${filename}: could not find the header row (First name / Email) in the Users sheet — is this the standard TalentLMS per-course export?`);
+  const headers = grid[headerIdx].map(cellStr);
+  const dataRows = grid.slice(headerIdx + 1).filter(r => r.some(c => cellStr(c) !== ''));
+  const unmappedColumns = headers.filter(h => h && !KNOWN_USERS_COLUMNS.has(h.toLowerCase()));
 
+  const lcHeaders = headers.map(h => h.toLowerCase());
+  const statusCol = lcHeaders.indexOf('status');
   const learners: Learner[] = [];
   let filteredOut = 0;
-  for (const r of rows) {
-    const statusKey = headers.find(h => h.trim().toLowerCase() === 'status');
-    const status = String(statusKey ? r[statusKey] : '').trim().toLowerCase();
+  for (const r of dataRows) {
+    const status = cellStr(statusCol >= 0 ? r[statusCol] : '').toLowerCase();
     if (status !== 'completed') { filteredOut++; continue; }
     const get = (name: string) => {
-      const k = headers.find(h => h.trim().toLowerCase() === name);
-      return k ? String(r[k] ?? '').trim() : '';
+      const i = lcHeaders.indexOf(name);
+      return i >= 0 ? cellStr(r[i]) : '';
     };
     const raw: Record<string, string> = {};
-    for (const h of headers) {
-      const v = r[h];
-      raw[h.trim()] = v instanceof Date ? normalizeDate(v) : String(v ?? '').trim();
-    }
+    headers.forEach((h, i) => { if (h && raw[h] === undefined) raw[h] = cellStr(r[i]); });
     learners.push({
       raw,
       firstName: get('first name'),

@@ -6,6 +6,10 @@ import path from 'path';
 const hasBlob = !!process.env.BLOB_READ_WRITE_TOKEN;
 const TMP = '/tmp/lms-import';
 
+/** True when sessions only live in /tmp on a serverless host — i.e. they will NOT
+ * survive between requests. The UI warns about this. */
+export const storageIsEphemeral = !hasBlob && !!process.env.VERCEL;
+
 export async function saveJson(key: string, data: unknown): Promise<void> {
   const body = JSON.stringify(data);
   if (hasBlob) { await put(key, body, { access: 'public', addRandomSuffix: false, contentType: 'application/json' }); return; }

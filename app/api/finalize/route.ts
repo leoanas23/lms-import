@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { generateOutputs } from '@/lib/engine/pipeline';
-import { loadJson, saveJson } from '@/lib/store';
+import { loadJson, saveJson, storageIsEphemeral } from '@/lib/store';
 import type { SessionResult, SessionDecisions } from '@/lib/engine/types';
 import { runAnalysisFromStored } from './rebuild';
 
@@ -11,7 +11,11 @@ export async function POST(req: Request) {
   try {
     const { sessionId, decisions } = await req.json() as { sessionId: string; decisions: SessionDecisions };
     const stored = await loadJson<SessionResult>(`sessions/${sessionId}.json`);
-    if (!stored) return NextResponse.json({ error: 'Session not found (it may have expired).' }, { status: 404 });
+    if (!stored) return NextResponse.json({
+      error: storageIsEphemeral
+        ? 'Session not found — Vercel Blob storage is not connected, so sessions are lost between requests. In Vercel: Storage → Create → Blob, connect it to this project, then redeploy.'
+        : 'Session not found (it may have expired). Start a new session.',
+    }, { status: 404 });
 
     const session = await runAnalysisFromStored(stored, decisions);
     const remaining = session.classified.filter(c => c.ambiguousCandidates).length;

@@ -91,6 +91,12 @@ export default function Wizard() {
         ))}
       </div>
       {err && <div className="error">{err}</div>}
+      {goCache?.storageWarning && (
+        <div className="error">
+          ⚠ <b>Persistent storage is not configured</b> — sessions will be lost between steps.
+          In Vercel: Storage → Create → Blob → connect it to this project, then redeploy.
+        </div>
+      )}
 
       {step === 'upload' && (
         <>
