@@ -82,6 +82,37 @@ const evPre = parseRawFile(makeRawPreamble(), 'preamble.xlsx');
 eq('preamble row skipped, header found', evPre.learners.length, 1);
 eq('preamble learner name', evPre.learners[0].firstName, 'Joy');
 
+// Real TalentLMS per-course format: header row at the BOTTOM of the Users sheet,
+// "-" as empty marker, Role column with instructors, date only in Course code.
+function makeRealFormat(): Buffer {
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Report information', ''],
+    ['Report type', 'Course report'],
+    ['Course information', ''],
+    ['Course name', 'MAY 5 The Customer Journey Audit: Finding the Gaps'],
+    ['Course code', '20260505'],
+    ['Category', 'Maryland WBC'],
+  ]), 'Overview');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ['Mo','Drew','Yes','mo@x.com','Learner','Completed','-','-','Female','-','Bowie','MD','20772','Prince Georges','Yes'],
+    ['Inst','Ructor','Yes','inst@x.com','Instructor','Completed','-','-','Female','-','Rockville','MD','20850','Montgomery','Undetermined'],
+    ['Not','Started','Yes','ns@x.com','Learner','Not started','-','-','Female','-','Laurel','MD','20708','United States','No'],
+    ['First name','Last name','Active','Email','Role','Status','Completion date','Time','Sex','Company Name','City','State','Zip Code','County','Currently in business (IF YOU ARE NOT IN BUSINESS, SKIP TO END AND SUBMIT)'],
+  ]), 'Users');
+  return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+}
+const evReal = parseRawFile(makeRealFormat(), '2026-05-05 (Customer Journey).xlsx');
+eq('real format: header at bottom, completed only', evReal.learners.length, 1);
+eq('real format: instructor + not-started filtered', evReal.filteredOut, 2);
+eq('real format: date from Course code', evReal.sessionDate, '05-05-2026');
+eq('real format: center alias expands', evReal.centerName, "Maryland Women's Business Center");
+eq('real format: dash becomes blank', evReal.learners[0].raw['Company Name'], '');
+eq('real format: long CIB header canonicalized', evReal.learners[0].raw['Currently in business'], 'Yes');
+eq('title dedup (no pipe in source)',
+  buildTitle('MAY 5 The Customer Journey Audit: Finding the Gaps', '05-05-2026'),
+  'MAY 5 | The Customer Journey Audit: Finding the Gaps');
+
 const ev1 = parseRawFile(raw1, 'Course_May5_report.xlsx');
 eq('parse course', ev1.courseName, 'MAY 5 | Customer Journey Audit');
 eq('parse center expands alias', ev1.centerName, "Maryland Women's Business Center");

@@ -69,7 +69,7 @@ export function buildCompanyVerify(classified: ClassifiedLearner[]): CompanyVeri
 }
 
 export interface OutputFiles {
-  files: { name: string; csv: string }[];
+  files: { name: string; csv: string; rows: number }[];
   report: { name: string; html: string };
   validation: string[];   // failures; empty = pass
   stats: { trainings: number; participants: number; droppedDupes: number };
@@ -112,10 +112,10 @@ export function generateOutputs(session: SessionResult): OutputFiles {
   return {
     report,
     files: [
-      { name: `${base}_client-data_new_import.csv`, csv: toCsv(clientColumns as string[], newRows) },
-      { name: `${base}_client-data_existing_import.csv`, csv: toCsv(clientColumns as string[], existRows) },
-      { name: `${base}_trainings_import.csv`, csv: toCsv((trainingsColumns as string[]), tRows) },
-      { name: `${base}_training-participants_import.csv`, csv: toCsv(pCols, pRows) },
+      { name: `${base}_client-data_new_import.csv`, csv: toCsv(clientColumns as string[], newRows), rows: newRows.length },
+      { name: `${base}_client-data_existing_import.csv`, csv: toCsv(clientColumns as string[], existRows), rows: existRows.length },
+      { name: `${base}_trainings_import.csv`, csv: toCsv((trainingsColumns as string[]), tRows), rows: tRows.length },
+      { name: `${base}_training-participants_import.csv`, csv: toCsv(pCols, pRows), rows: pRows.length },
     ],
     validation,
     stats: { trainings: tRows.length, participants: pRows.length, droppedDupes },

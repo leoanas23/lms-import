@@ -229,7 +229,7 @@ export default function Wizard() {
             <h2>Download import files (import in this order)</h2>
             {outputs.files.map((f: any, i: number) => (
               <a key={f.name} className="dl" onClick={() => download(f.name, f.csv)} style={{ cursor: 'pointer' }}>
-                {i + 1}. {f.name}<small>{f.csv.split('\n').length - 2} rows</small>
+                {i + 1}. {f.name}<small>{f.rows} rows</small>
               </a>
             ))}
             {outputs.report && (

@@ -6,11 +6,15 @@ import { uuidv7 } from './uuidv7';
 import type { TrainingEvent, ClassifiedLearner } from './types';
 
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-const PREFIX_RE = /^[A-Z]{3,9}\.?\s?\d{1,2}\s?\|\s?/i;
+// "MAY 5 | ", "MAY 5 ", "SEPT. 12 - " … — month-word + day prefix, separator optional
+// (real TalentLMS course names carry the date prefix without a pipe).
+const PREFIX_RE = /^([A-Za-z]{3,9})\.?\s+(\d{1,2})\s*[|:\-]?\s*/;
 
 /** Title = "MMM D | Course Name" — prefix DERIVED from start date (spec §3). */
 export function buildTitle(courseName: string, startDate: string): string {
-  const stripped = courseName.replace(PREFIX_RE, '').trim();
+  const pm = courseName.match(PREFIX_RE);
+  const stripped = (pm && MONTHS.includes(pm[1].slice(0, 3).toUpperCase())
+    ? courseName.slice(pm[0].length) : courseName).trim();
   const m = startDate.match(/^(\d{2})-(\d{2})-(\d{4})$/);
   if (!m) return stripped;
   const month = MONTHS[parseInt(m[1], 10) - 1];
