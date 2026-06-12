@@ -71,6 +71,15 @@ const goCsv = [
   ',Karly,Feinberg,"Smith Holdings, Inc.",karen@yourbusinessnavigator.com,Bowie State University WBC',
 ].join('\n');
 
+// Real GO exports use spaced headers ("First Name") plus extra columns — must parse identically.
+const goSpaced = parseGoExport([
+  'Business,First Name,Last Name,Email,Advisor,Primary Advisor Email,Center,County',
+  'Monica Drew,Monica,Drew,monica@x.com,Martha,martha@marylandwbc.org,Maryland Women\'s Business Center,Montgomery',
+].join('\n'));
+eq('GO export spaced headers parse', goSpaced.length, 1);
+eq('GO export spaced headers firstName', goSpaced[0].firstName, 'Monica');
+eq('GO export spaced headers advisor', goSpaced[0].advisorEmail, 'martha@marylandwbc.org');
+
 const session = runAnalysis(
   [{ name: 'Course_May5_report.xlsx', buf: raw1 }, { name: 'Course_May6_report.xlsx', buf: raw2 }],
   goCsv, { filename: 'go.csv', modified: new Date().toISOString() });

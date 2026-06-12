@@ -4,6 +4,8 @@ import customers from '@/config/customers.json';
 import type { GoRecord, Learner, ClassifiedLearner, TrainingEvent, SessionDecisions } from './types';
 
 const REQUIRED_GO_HEADERS = ['Email', 'FirstName', 'LastName', 'Business', 'Primary Advisor Email', 'Center'];
+// Header matching ignores case, spaces and punctuation, so "First Name" == "FirstName".
+const headerKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
 
 /** Parse the GO export CSV text into records. Throws if required headers missing. */
 export function parseGoExport(csvText: string): GoRecord[] {
@@ -12,7 +14,7 @@ export function parseGoExport(csvText: string): GoRecord[] {
   const header = rows[0];
   const idx: Record<string, number> = {};
   for (const h of REQUIRED_GO_HEADERS) {
-    const i = header.findIndex(c => c.trim() === h);
+    const i = header.findIndex(c => headerKey(c) === headerKey(h));
     if (i === -1) throw new Error(`GO export is missing required column "${h}". Found: ${header.join(', ')}`);
     idx[h] = i;
   }

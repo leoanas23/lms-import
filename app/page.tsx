@@ -27,6 +27,16 @@ export default function Wizard() {
 
   useEffect(() => { fetch('/api/go-export').then(r => r.json()).then(setGoCache).catch(() => {}); }, []);
 
+  // Route any dropped/selected files to the right slot: .xlsx -> raw, .csv -> GO export.
+  function addFiles(files: File[]) {
+    const xlsx = files.filter(f => /\.xlsx$/i.test(f.name));
+    const csv = files.filter(f => /\.csv$/i.test(f.name));
+    if (xlsx.length) setRawFiles(prev => [...prev, ...xlsx]);
+    if (csv.length) setGoFile(csv[csv.length - 1]);
+    const ignored = files.length - xlsx.length - csv.length;
+    setErr(ignored > 0 ? `${ignored} file(s) ignored — only .xlsx (TalentLMS) and .csv (GO export) are accepted.` : '');
+  }
+
   async function process() {
     setBusy(true); setErr('');
     try {
@@ -87,17 +97,19 @@ export default function Wizard() {
           <div className="card">
             <h2>Raw TalentLMS files</h2>
             <div className="drop" onClick={() => rawInput.current?.click()}
-              onDragOver={e => e.preventDefault()}
-              onDrop={e => { e.preventDefault(); setRawFiles([...rawFiles, ...Array.from(e.dataTransfer.files)]); }}>
+              onDragOver={e => e.preventDefault()} onDragEnter={e => e.preventDefault()}
+              onDrop={e => { e.preventDefault(); addFiles(Array.from(e.dataTransfer.files)); }}>
               Drop the per-course .xlsx exports here, or click to choose. One file per training event; multiple files become one batch.
               <input ref={rawInput} type="file" multiple accept=".xlsx"
-                onChange={e => setRawFiles([...rawFiles, ...Array.from(e.target.files || [])])} />
+                onChange={e => { addFiles(Array.from(e.target.files || [])); e.target.value = ''; }} />
             </div>
             {rawFiles.length > 0 && <ul className="filelist">{rawFiles.map((f, i) =>
               <li key={i}>📄 {f.name} <a style={{ color: 'var(--red)', cursor: 'pointer' }}
                 onClick={() => setRawFiles(rawFiles.filter((_, j) => j !== i))}>remove</a></li>)}</ul>}
           </div>
-          <div className="card">
+          <div className="card"
+            onDragOver={e => e.preventDefault()} onDragEnter={e => e.preventDefault()}
+            onDrop={e => { e.preventDefault(); addFiles(Array.from(e.dataTransfer.files)); }}>
             <h2>GO client export</h2>
             {goCache?.cached && !goFile && (
               <p className="note" style={{ marginBottom: 10 }}>
