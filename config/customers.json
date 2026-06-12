@@ -1,0 +1,50 @@
+{
+  "centers": {
+    "Maryland Women's Business Center": {
+      "shortCode": "MWBC",
+      "advisorEmail": "info@marylandwbc.org",
+      "city": "Rockville",
+      "state": "Maryland",
+      "zip": "20850",
+      "territory": [
+        "frederick county",
+        "frederick",
+        "howard county",
+        "howard",
+        "montgomery county",
+        "montgomery",
+        "city of frederick",
+        "city of rockville",
+        "rockville"
+      ]
+    },
+    "Bowie State University WBC": {
+      "shortCode": "BSU",
+      "advisorEmail": "admin@marylandwbc.org",
+      "city": "Rockville",
+      "state": "Maryland",
+      "zip": "20850",
+      "territory": [
+        "prince george's county",
+        "prince georges county",
+        "prince george",
+        "pg",
+        "city of bowie",
+        "bowie",
+        "bowie state university"
+      ]
+    }
+  },
+  "centerAliases": {
+    "BSU": "Bowie State University WBC",
+    "BSU WBC": "Bowie State University WBC",
+    "Bowie State University": "Bowie State University WBC",
+    "MWBC": "Maryland Women's Business Center",
+    "Maryland WBC": "Maryland Women's Business Center"
+  },
+  "customerShortFromCenters": {
+    "MWBC": "MWBC",
+    "BSU": "BSU",
+    "MWBC+BSU": "MWBC+BSU"
+  }
+}

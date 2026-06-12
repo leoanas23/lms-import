@@ -1,0 +1,19 @@
+{
+  "fallbacks": {
+    "Program Format Type": "Online",
+    "Primary Training Topic": "Other",
+    "Primary Training Topic Other": "N/A",
+    "Resource Partners": "Other",
+    "Resource Partners Other": "Other",
+    "SBA Language": "English"
+  },
+  "overrides": {
+    "Number Of Sessions": "1",
+    "Participants Registration method": "Registration by individuals",
+    "Total Number Trained": "0"
+  },
+  "alwaysBlank": [
+    "Partner Training Number", "Training Instructor Name", "Training Start Time",
+    "Training End Time", "Funding Source", "Zip +4 Code"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "name": "lms-import-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "tsx test/engine.test.ts"
+  },
+  "dependencies": {
+    "@vercel/blob": "^0.27.0",
+    "googleapis": "^144.0.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
