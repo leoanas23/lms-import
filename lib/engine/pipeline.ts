@@ -57,14 +57,20 @@ const batchMonth = (ts: TrainingEvent[]) => {
   return d ? `${d[2]}-${d[1]}` : 'batch';
 };
 
+/** Flag ONLY genuine uncertainty. Deterministic outcomes (company from GO,
+ * real LMS company, name fallback when no company exists anywhere) are
+ * auto-resolved and need no human review. */
 export function buildCompanyVerify(classified: ClassifiedLearner[]): CompanyVerifyRow[] {
   return classified.map((c, i) => ({
     row: i + 1, firstName: c.firstName, lastName: c.lastName, email: c.email,
     lmsCompanyField: c.raw['Company Name'] ?? c.raw['Legal entity of your business'] ?? '',
     companyInImport: c.resolvedCompany,
     usedNameFallback: c.usedNameFallback,
-    flag: c.usedNameFallback ? 'Name fallback — verify against GO'
-      : c.lmsOverwrotePlaceholder ? 'LMS company replaced GO placeholder' : '',
+    flag: c.matchType === 'fullname'
+      ? `Matched to GO by name only (GO email: ${c.goRecord?.email || 'blank'}) — confirm same person`
+      : c.lmsOverwrotePlaceholder
+        ? 'LMS company replaces the placeholder on the existing GO record — confirm'
+        : '',
   }));
 }
 

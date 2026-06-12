@@ -38,6 +38,6 @@ for (const line of tcsv.slice(1).filter(l => l.trim())) {
   console.log('  ' + (line.match(/("([^"]|"")*"|[^,])*/g) || [])[ti * 2]); // crude but fine for eyeballing
 }
 console.log('\noutputs:');
-for (const f of out.files) console.log(`  ${f.name}  (${f.csv.split('\n').length - 2} data rows)`);
+for (const f of out.files) console.log(`  ${f.name}  (${f.rows} data rows)`);
 console.log('stats:', JSON.stringify(out.stats));
 console.log(out.validation.length ? `VALIDATION FAILURES:\n  ${out.validation.join('\n  ')}` : 'validation: ALL PASS');

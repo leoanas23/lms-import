@@ -74,6 +74,20 @@ export default function Wizard() {
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     a.download = name; a.click();
   };
+  const verifyTable = (rows: any[]) => (
+    <table><thead><tr><th>#</th><th>Person</th><th>LMS field</th><th>Company in import</th><th>Flag</th></tr></thead>
+      <tbody>{rows.map((v: any) => (
+        <tr key={v.row} className="row-edit">
+          <td style={{ color: 'var(--faint)' }}>{v.row}</td>
+          <td><b>{v.firstName} {v.lastName}</b><br /><span className="note">{v.email}</span></td>
+          <td>{v.lmsCompanyField || <i>—</i>}</td>
+          <td><input type="text" defaultValue={corrections[v.email] ?? v.companyInImport}
+            onBlur={e => { if (e.target.value !== v.companyInImport) setCorrections({ ...corrections, [v.email]: e.target.value }); }} /></td>
+          <td className="flag">{v.flag}</td>
+        </tr>
+      ))}</tbody></table>
+  );
+
   const badge = (center: string) =>
     <span className={`badge ${center.includes('Bowie') ? 'bsu' : 'mwbc'}`}>{center.includes('Bowie') ? 'BSU WBC' : 'MWBC'}</span>;
   const stepIdx = STEPS.findIndex(s => s.id === step);
@@ -192,19 +206,27 @@ export default function Wizard() {
       {step === 'verify' && (
         <>
           <div className="card">
-            <h2>Company verify — mandatory before output</h2>
-            <p className="note" style={{ marginBottom: 10 }}>Edit any company that's wrong. Legal entity re-derives automatically. Flagged rows need the closest attention.</p>
-            <table><thead><tr><th>#</th><th>Person</th><th>LMS field</th><th>Company in import</th><th>Flag</th></tr></thead>
-              <tbody>{verify.map((v: any) => (
-                <tr key={v.row} className="row-edit">
-                  <td style={{ color: 'var(--faint)' }}>{v.row}</td>
-                  <td><b>{v.firstName} {v.lastName}</b><br /><span className="note">{v.email}</span></td>
-                  <td>{v.lmsCompanyField || <i>—</i>}</td>
-                  <td><input type="text" defaultValue={corrections[v.email] ?? v.companyInImport}
-                    onBlur={e => { if (e.target.value !== v.companyInImport) setCorrections({ ...corrections, [v.email]: e.target.value }); }} /></td>
-                  <td className="flag">{v.flag}</td>
-                </tr>
-              ))}</tbody></table>
+            <h2>Company verify</h2>
+            {verify.filter((v: any) => v.flag).length === 0 ? (
+              <p className="note" style={{ marginBottom: 10 }}>
+                ✓ Nothing needs review — every company resolved deterministically
+                (existing clients keep their GO company; new clients use the LMS company, or their name when none exists).
+              </p>
+            ) : (
+              <>
+                <p className="note" style={{ marginBottom: 10 }}>
+                  Only the {verify.filter((v: any) => v.flag).length} row(s) below need your attention — everything else resolved deterministically.
+                  Edit the company if it's wrong; legal entity re-derives automatically.
+                </p>
+                {verifyTable(verify.filter((v: any) => v.flag))}
+              </>
+            )}
+            <details style={{ marginTop: 14 }}>
+              <summary className="note" style={{ cursor: 'pointer' }}>
+                Auto-resolved rows ({verify.filter((v: any) => !v.flag).length}) — view or edit anyway
+              </summary>
+              {verifyTable(verify.filter((v: any) => !v.flag))}
+            </details>
           </div>
           <div className="actions">
             <button className="btn ghost" onClick={() => setStep('review')}>Back</button>

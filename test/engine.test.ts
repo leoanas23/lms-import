@@ -186,7 +186,9 @@ ok('zip apostrophe-prefixed', newCsv.includes("'21701"));
 
 const verify = buildCompanyVerify(session.classified);
 eq('verify rows', verify.length, 3);
-ok('verify flags monica fallback', verify.find(v => v.email === 'monica@x.com')!.flag.includes('fallback'));
+eq('verify: deterministic name fallback NOT flagged', verify.find(v => v.email === 'monica@x.com')!.flag, '');
+eq('verify: deterministic new client NOT flagged', verify.find(v => v.email === 'new@x.com')!.flag, '');
+ok('verify: name-only match IS flagged', verify.find(v => v.email === 'karly@x.com')!.flag.includes('name only'));
 
 
 // --- HTML report ---
